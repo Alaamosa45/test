@@ -1,11 +1,17 @@
 function generateCSRFToken() {
-  const token = btoa(Date.now().toString());
-  localStorage.setItem("csrfToken", token);
+  const token = crypto.randomUUID();
+  document.cookie = `csrfToken=${token}; Secure; SameSite=Strict; HttpOnly`;
   return token;
 }
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 function validateCSRFToken(token) {
-  const storedToken = localStorage.getItem("csrfToken");
+  const storedToken = getCookie("csrfToken");
   return storedToken === token;
 }
 
@@ -25,8 +31,8 @@ function sanitizeInput(input) {
 }
 
 function checkUserVisit() {
-  const savedPhoneNumber = localStorage.getItem("phoneNumber");
-  const lastPointTime = localStorage.getItem("lastPointTime");
+  const savedPhoneNumber = getCookie("phoneNumber");
+  const lastPointTime = getCookie("lastPointTime");
   const now = new Date().getTime();
 
   if (savedPhoneNumber && lastPointTime && isWithinAllowedTime()) {
@@ -34,7 +40,7 @@ function checkUserVisit() {
     const oneHourInMilliseconds = 60 * 60 * 1000;
 
     if (timeDifference >= oneHourInMilliseconds) {
-      localStorage.setItem("lastPointTime", now);
+      document.cookie = `lastPointTime=${now}; Secure; SameSite=Strict; HttpOnly`;
       showThankYouMessage(savedPhoneNumber);
     } else {
       showNotification(
@@ -50,7 +56,7 @@ function checkUserVisit() {
 }
 
 function showThankYouMessage(phoneNumber) {
-  let userData = JSON.parse(localStorage.getItem("userData")) || {};
+  let userData = JSON.parse(getCookie("userData") || '{}');
 
   if (!userData[phoneNumber]) {
     userData[phoneNumber] = 1;
@@ -58,7 +64,7 @@ function showThankYouMessage(phoneNumber) {
     userData[phoneNumber]++;
   }
 
-  localStorage.setItem("userData", JSON.stringify(userData));
+  document.cookie = `userData=${JSON.stringify(userData)}; Secure; SameSite=Strict; HttpOnly`;
 
   const thankYouMessage = document.getElementById("thank-you-message");
   const pointsElement = document.getElementById("points");
@@ -118,17 +124,18 @@ function registerPhoneNumber() {
   const phoneNumber = sanitizeInput(phoneNumberInput.value);
 
   if (!/^[0-9]{10,}$/.test(phoneNumber)) {
-    showNotification("يرجى إدخال رقم هاتف صالح مكون من 10 أرقام على الأقل.");
+    showNotification("يرجى إدخال رقم هاتف صالح مكون من 10 أرقام فقط.");
     return;
   }
 
   try {
+    const encryptionKey = atob(getCookie("encryptionKey"));
     const encryptedPhone = CryptoJS.AES.encrypt(
       phoneNumber,
-      "secret-key"
+      encryptionKey
     ).toString();
-    localStorage.setItem("phoneNumber", encryptedPhone);
-    localStorage.setItem("lastPointTime", new Date().getTime());
+    document.cookie = `phoneNumber=${encryptedPhone}; Secure; SameSite=Strict; HttpOnly`;
+    document.cookie = `lastPointTime=${new Date().getTime()}; Secure; SameSite=Strict; HttpOnly`;
     showThankYouMessage(phoneNumber);
 
     const registrationForm = document.getElementById("registration-form");
