@@ -40,12 +40,12 @@ function sanitizeInput(input) {
 async function verifyPassword(password) {
   try {
     const response = await fetch('http://localhost:3000/api/authenticate', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ password }),
-});
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
 
     if (response.ok) {
       const result = await response.json();
@@ -62,6 +62,7 @@ async function verifyPassword(password) {
     showNotification('خطأ في الاتصال بالخادم: ' + error.message, 'red');
   }
 }
+
 
 function loadAdminPanel() {
   const adminData = document.getElementById("admin-data");
