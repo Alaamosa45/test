@@ -1,5 +1,5 @@
 // Enhanced script.js
-const localPassword = "123456"; // كلمة مرور للاستخدام المحلي
+const globalPassword = "123456"; // كلمة مرور عالمية لجميع الأجهزة
 let userData = JSON.parse(localStorage.getItem("userData")) || [
   { phoneNumber: "1234567890", count: 5 },
   { phoneNumber: "0987654321", count: 2 },
@@ -44,7 +44,7 @@ function verifyPassword() {
   );
   const adminContent = document.getElementById("admin-content");
 
-  if (password === localPassword) {
+  if (password === globalPassword) {
     adminContent.style.display = "block";
     showNotification("تم تسجيل الدخول بنجاح!", "green");
   } else {
