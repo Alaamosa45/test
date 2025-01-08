@@ -63,6 +63,17 @@ async function verifyPassword(password) {
   }
 }
 
+async function attemptAdminLogin() {
+  const passwordInput = document.getElementById('admin-password').value;
+
+  try {
+    await verifyPassword(passwordInput);
+  } catch (error) {
+    showNotification('فشل الدخول إلى لوحة الإدارة: ' + error.message, 'red');
+  }
+}
+
+
 
 function loadAdminPanel() {
   const adminData = document.getElementById("admin-data");
