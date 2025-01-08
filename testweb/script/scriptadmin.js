@@ -1,9 +1,33 @@
-// Enhanced script.js
-const globalPassword = "123456"; // كلمة مرور عالمية لجميع الأجهزة
-let userData = JSON.parse(localStorage.getItem("userData")) || [
-  { phoneNumber: "1234567890", count: 5 },
-  { phoneNumber: "0987654321", count: 2 },
-];
+// حل مشكلة CSRF token invalid
+
+function generateCSRFToken(phoneNumber) {
+  const token = crypto.randomUUID();
+  const expiryDate = new Date();
+  expiryDate.setTime(expiryDate.getTime() + 15 * 60 * 1000); // صلاحية لمدة 15 دقيقة
+  document.cookie = `csrf-${phoneNumber}=${token}; Secure; SameSite=Strict; HttpOnly; expires=${expiryDate.toUTCString()}`;
+  return token;
+}
+
+function validateCSRFToken(phoneNumber, token) {
+  const storedToken = getCookie(`csrf-${phoneNumber}`);
+  if (!storedToken) {
+    showNotification("CSRF token is missing or expired.", "red");
+    return false;
+  }
+
+  if (storedToken !== token) {
+    showNotification("CSRF token is invalid.", "red");
+    return false;
+  }
+
+  return true;
+}
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(";").shift();
+}
 
 function showNotification(message, color = "black") {
   const notification = document.getElementById("notification");
@@ -15,100 +39,12 @@ function showNotification(message, color = "black") {
   }
 }
 
-function generateCSRFToken(phoneNumber) {
-  const token = crypto.randomUUID();
-  document.cookie = `csrf-${phoneNumber}=${token}; Secure; SameSite=Strict; HttpOnly`;
-  return token;
-}
-
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(";").shift();
-}
-
-function validateCSRFToken(phoneNumber, token) {
-  const storedToken = getCookie(`csrf-${phoneNumber}`);
-  return storedToken === token;
-}
-
-function sanitizeInput(input) {
-  const div = document.createElement("div");
-  div.textContent = input;
-  return div.innerHTML;
-}
-
-function verifyPassword() {
-  const password = sanitizeInput(
-    document.getElementById("admin-password").value
-  );
-  const adminContent = document.getElementById("admin-content");
-
-  if (password === globalPassword) {
-    adminContent.style.display = "block";
-    showNotification("تم تسجيل الدخول بنجاح!", "green");
-  } else {
-    showNotification("كلمة المرور غير صحيحة!", "red");
+// Example usage during login or any CSRF-protected operation
+function performActionWithCSRF(phoneNumber, actionToken) {
+  if (!validateCSRFToken(phoneNumber, actionToken)) {
+    return;
   }
+
+  // If validation passes, perform the desired action
+  showNotification("Action performed successfully.", "green");
 }
-
-function loadAdminPanel() {
-  const adminData = document.getElementById("admin-data");
-  adminData.innerHTML = "";
-
-  for (const { phoneNumber, count } of userData) {
-    const row = `<tr>
-                  <td contenteditable="true" oninput="validatePhoneNumber(this)" style="word-wrap: break-word;">${phoneNumber}</td>
-                  <td contenteditable="true" oninput="validateRegistrationCount(this)" style="word-wrap: break-word;">${count}</td>
-                  <td>
-                      <button onclick="deleteRow('${phoneNumber}')">حذف</button>
-                  </td>
-                </tr>`;
-    adminData.innerHTML += row;
-  }
-}
-
-function deleteRow(phoneNumber) {
-  const index = userData.findIndex(user => user.phoneNumber === phoneNumber);
-  if (index !== -1) {
-    userData.splice(index, 1);
-    document.cookie = `csrf-${phoneNumber}=; Secure; SameSite=Strict; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
-    localStorage.setItem("userData", JSON.stringify(userData));
-    showNotification(
-      `تم حذف الرقم ${phoneNumber} وجميع البيانات المرتبطة.`,
-      "green"
-    );
-    loadAdminPanel();
-  } else {
-    showNotification("الرقم غير موجود.", "red");
-  }
-}
-
-function validatePhoneNumber(cell) {
-  const validNumber = sanitizeInput(
-    cell.textContent.replace(/[^0-9]/g, "").slice(0, 10)
-  );
-  if (cell.textContent !== validNumber) {
-    cell.textContent = validNumber;
-    showNotification(
-      "رقم الهاتف يجب أن يكون مكوناً من 10 أرقام فقط ولا يحتوي على رموز أو أحرف.",
-      "red"
-    );
-  }
-}
-
-function validateRegistrationCount(cell) {
-  const validCount = sanitizeInput(cell.textContent.replace(/[^0-9]/g, ""));
-  if (cell.textContent !== validCount) {
-    cell.textContent = validCount;
-    showNotification("عدد التسجيلات يجب أن يحتوي على أرقام فقط.", "red");
-  }
-}
-
-window.onload = () => {
-  try {
-    loadAdminPanel();
-  } catch (error) {
-    showNotification("حدث خطأ أثناء تحميل البيانات: " + error.message, "red");
-  }
-};
