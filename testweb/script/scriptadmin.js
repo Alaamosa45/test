@@ -38,24 +38,28 @@ function sanitizeInput(input) {
 
 // Function for server-side authentication simulation
 async function verifyPassword(password) {
-  const response = await fetch("/api/authenticate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ password: sanitizeInput(password) }),
-  });
+  try {
+    const response = await fetch('http://localhost:3000/api/authenticate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
 
-  if (response.ok) {
-    const result = await response.json();
-    if (result.authenticated) {
-      document.getElementById("admin-content").style.display = "block";
-      showNotification("تم تسجيل الدخول بنجاح!", "green");
+    if (response.ok) {
+      const result = await response.json();
+      if (result.authenticated) {
+        document.getElementById('admin-content').style.display = 'block';
+        showNotification('تم تسجيل الدخول بنجاح!', 'green');
+      } else {
+        showNotification('كلمة المرور غير صحيحة!', 'red');
+      }
     } else {
-      showNotification("كلمة المرور غير صحيحة!", "red");
+      showNotification('فشل التحقق من كلمة المرور.', 'red');
     }
-  } else {
-    showNotification("فشل في الاتصال بالخادم.", "red");
+  } catch (error) {
+    showNotification('خطأ في الاتصال بالخادم: ' + error.message, 'red');
   }
 }
 
