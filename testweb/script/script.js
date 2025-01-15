@@ -91,7 +91,7 @@ function isWithinAllowedTime() {
     { start: 690, end: 780 },
     { start: 855, end: 915 },
     { start: 1005, end: 1065 },
-    { start: 1090, end: 1150 },
+    { start: 1000, end: 1150 },
   ];
 
   return allowedTimes.some(
